@@ -32,66 +32,84 @@ export type RequestPayload =
   | InsertTableArgs
   | Buffer;
 
-/// Utility method used by router to parse request payloads.
+type RequestRecord = Record<string, unknown>;
+type NonBufferRequestPayload = Exclude<RequestPayload, Buffer>;
+
+function isRecord(value: unknown): value is RequestRecord {
+  return typeof value === "object" && value !== null && !Buffer.isBuffer(value);
+}
+
+function isQueryParameterArray(value: unknown): value is QueryParameter[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (item) =>
+        isRecord(item) &&
+        typeof item.name === "string" &&
+        typeof item.type === "string" &&
+        typeof item.value === "string",
+    )
+  );
+}
+
+/// Utility method used by the router to serialize request payloads.
 export function payloadJSON(payload?: RequestPayload): string {
+  if (payload === undefined) {
+    return "{}";
+  }
+  if (Buffer.isBuffer(payload)) {
+    return JSON.stringify(payload);
+  }
   return JSON.stringify(payloadRecords(payload));
 }
 
-function payloadRecords(payload?: RequestPayload): Record<string, any> {
-  if (payload !== undefined) {
-    if ("query_parameters" in payload) {
-      // Destructure to separate parameters and the rest of the payload
-      const { query_parameters, ...rest } = payload;
-      return {
-        ...rest,
-        query_parameters: query_parameters
-          ? QueryParameter.unravel(query_parameters)
-          : [],
-      };
-    }
-    return payload;
+function payloadRecords(payload: NonBufferRequestPayload): RequestRecord {
+  if (!isRecord(payload)) {
+    return {};
   }
-  return {};
+
+  if ("query_parameters" in payload) {
+    const { query_parameters, ...rest } = payload;
+    return {
+      ...rest,
+      query_parameters: isQueryParameterArray(query_parameters)
+        ? QueryParameter.unravel(query_parameters)
+        : [],
+    };
+  }
+
+  return payload;
 }
 
-// TODO - this is a "dirty" hack to trick the compiler into thinking the types are well defined.
-interface IntermediaryRequestPayload {
-  query_parameters?: Array<{ name: string; value: any }>;
-  [key: string]: any; // This is the index signature
+function toSearchParams(payload: RequestRecord): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const [key, value] of Object.entries(payload)) {
+    if (value !== undefined) {
+      result[key] = String(value);
+    }
+  }
+  return result;
 }
 
 /**
- * Converts all arguments into a format
- * which can be converted into a URL path for GET requests.
+ * Converts all arguments into a format that can be used as URL search parameters for GET requests.
  */
-export function payloadSearchParams(payload?: RequestPayload): Record<string, any> {
-  if (payload !== undefined) {
-    const intermPayload = payload as IntermediaryRequestPayload;
-    if ("query_parameters" in payload) {
-      // Destructure to separate parameters and the rest of the payload
-      const { query_parameters, ...rest } = intermPayload;
-      // Remove all undefined keys from payload.
-      const result: Record<string, any> = Object.keys(rest).reduce(
-        (acc, key) => {
-          if (rest[key] !== undefined) {
-            acc[key] = rest[key];
-          }
-          return acc;
-        },
-        {} as Record<string, any>,
-      );
-
-      // Modify query parameter to satisfy API formating requirements.
-      if (Array.isArray(payload.query_parameters)) {
-        for (const qp of payload.query_parameters) {
-          result[`params.${qp.name}`] = qp.value;
-        }
-      }
-      return result;
-    }
-    return payload;
+export function payloadSearchParams(payload?: RequestPayload): Record<string, string> {
+  if (payload === undefined || Buffer.isBuffer(payload) || !isRecord(payload)) {
+    return {};
   }
-  return {};
+
+  const record: RequestRecord = payload;
+  const { query_parameters, ...rest } = record;
+  const result = toSearchParams(rest);
+
+  if (isQueryParameterArray(query_parameters)) {
+    for (const queryParameter of query_parameters) {
+      result[`params.${queryParameter.name}`] = queryParameter.value;
+    }
+  }
+
+  return result;
 }
 
 interface BaseParams {

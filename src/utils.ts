@@ -26,16 +26,22 @@ export function ageInHours(timestamp: Date | string): number {
 }
 
 /**
+ * Return a shallow copy of an object with defaults for keys that are undefined.
  *
- * @param obj Used to populate partial payloads with required defaults
- * @param defaults
- * @returns
+ * @param obj The object to copy.
+ * @param defaults The fallback values to apply to the copied object.
+ * @returns A shallow copy of `obj` with undefined keys populated from `defaults`.
  */
-export function withDefaults<T>(obj: T, defaults: Partial<T>): T {
-  const result: any = { ...obj };
-  for (const key in defaults) {
+type Mutable<T> = { -readonly [P in keyof T]: T[P] };
+
+export function withDefaults<T extends object>(obj: T, defaults: Partial<T>): T {
+  const result = { ...obj } as Mutable<T>;
+  for (const key of Object.keys(defaults) as Array<keyof T>) {
     if (result[key] === undefined) {
-      result[key] = defaults[key];
+      const defaultValue = defaults[key];
+      if (defaultValue !== undefined) {
+        result[key] = defaultValue as Mutable<T>[typeof key];
+      }
     }
   }
   return result as T;

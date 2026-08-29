@@ -62,7 +62,11 @@ export class Router {
 
       return (await response.json()) as T;
     } catch (error) {
-      log.error(logPrefix, error);
+      log.error(
+        logPrefix,
+        "Request failed",
+        error instanceof Error ? error.name : "Unknown error",
+      );
       throw new DuneError(`Response ${error}`);
     }
   }
@@ -80,7 +84,7 @@ export class Router {
     } else {
       body = payloadJSON(payload);
     }
-    log.debug(logPrefix, `${method} received input url=${url}, payload=${body}`);
+    log.debug(logPrefix, `${method} request initiated`);
     const requestData: RequestInit = {
       method,
       headers: {
@@ -99,7 +103,6 @@ export class Router {
       const searchParams = new URLSearchParams(payloadSearchParams(payload)).toString();
       pathParams = searchParams ? `?${searchParams}` : "";
     }
-    log.debug("Final request URL", url + pathParams);
     const response = fetch(url + pathParams, requestData);
     if (raw) {
       return response as T;
