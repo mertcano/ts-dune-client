@@ -70,11 +70,15 @@ function payloadRecords(payload: NonBufferRequestPayload): RequestRecord {
 
   if ("query_parameters" in payload) {
     const { query_parameters, ...rest } = payload;
+    if (query_parameters !== undefined && !isQueryParameterArray(query_parameters)) {
+      throw new TypeError("Invalid query_parameters format: expected an array of QueryParameter objects");
+    }
     return {
       ...rest,
-      query_parameters: isQueryParameterArray(query_parameters)
-        ? QueryParameter.unravel(query_parameters)
-        : [],
+      query_parameters:
+        query_parameters !== undefined
+          ? QueryParameter.unravel(query_parameters)
+          : [],
     };
   }
 
@@ -103,7 +107,10 @@ export function payloadSearchParams(payload?: RequestPayload): Record<string, st
   const { query_parameters, ...rest } = record;
   const result = toSearchParams(rest);
 
-  if (isQueryParameterArray(query_parameters)) {
+  if (query_parameters !== undefined) {
+    if (!isQueryParameterArray(query_parameters)) {
+      throw new TypeError("Invalid query_parameters format: expected an array of QueryParameter objects");
+    }
     for (const queryParameter of query_parameters) {
       result[`params.${queryParameter.name}`] = queryParameter.value;
     }
