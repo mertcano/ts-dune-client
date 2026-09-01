@@ -47,7 +47,7 @@ function isQueryParameterArray(value: unknown): value is QueryParameter[] {
         isRecord(item) &&
         typeof item.name === "string" &&
         typeof item.type === "string" &&
-        typeof item.value === "string",
+        typeof item.value === "string"
     )
   );
 }
@@ -75,10 +75,7 @@ function payloadRecords(payload: NonBufferRequestPayload): RequestRecord {
     }
     return {
       ...rest,
-      query_parameters:
-        query_parameters !== undefined
-          ? QueryParameter.unravel(query_parameters)
-          : [],
+      query_parameters: query_parameters !== undefined ? QueryParameter.unravel(query_parameters) : [],
     };
   }
 
@@ -179,9 +176,8 @@ export function validateAndBuildGetResultParams({
   query_parameters,
 }: GetResultParams): GetResultParams {
   assert(
-    sample_count === undefined ||
-      (limit === undefined && offset === undefined && filters === undefined),
-    "sampling cannot be combined with filters or pagination",
+    sample_count === undefined || (limit === undefined && offset === undefined && filters === undefined),
+    "sampling cannot be combined with filters or pagination"
   );
   if (columns !== undefined) {
     if (typeof columns === "string") {
