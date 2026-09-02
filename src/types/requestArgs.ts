@@ -47,7 +47,7 @@ function isQueryParameterArray(value: unknown): value is QueryParameter[] {
         isRecord(item) &&
         typeof item.name === "string" &&
         typeof item.type === "string" &&
-        typeof item.value === "string"
+        typeof item.value === "string",
     )
   );
 }
@@ -71,11 +71,14 @@ function payloadRecords(payload: NonBufferRequestPayload): RequestRecord {
   if ("query_parameters" in payload) {
     const { query_parameters, ...rest } = payload;
     if (query_parameters !== undefined && !isQueryParameterArray(query_parameters)) {
-      throw new TypeError("Invalid query_parameters format: expected an array of QueryParameter objects");
+      throw new TypeError(
+        "Invalid query_parameters format: expected an array of QueryParameter objects",
+      );
     }
     return {
       ...rest,
-      query_parameters: query_parameters !== undefined ? QueryParameter.unravel(query_parameters) : [],
+      query_parameters:
+        query_parameters !== undefined ? QueryParameter.unravel(query_parameters) : [],
     };
   }
 
@@ -106,7 +109,9 @@ export function payloadSearchParams(payload?: RequestPayload): Record<string, st
 
   if (query_parameters !== undefined) {
     if (!isQueryParameterArray(query_parameters)) {
-      throw new TypeError("Invalid query_parameters format: expected an array of QueryParameter objects");
+      throw new TypeError(
+        "Invalid query_parameters format: expected an array of QueryParameter objects",
+      );
     }
     for (const queryParameter of query_parameters) {
       result[`params.${queryParameter.name}`] = queryParameter.value;
@@ -176,8 +181,9 @@ export function validateAndBuildGetResultParams({
   query_parameters,
 }: GetResultParams): GetResultParams {
   assert(
-    sample_count === undefined || (limit === undefined && offset === undefined && filters === undefined),
-    "sampling cannot be combined with filters or pagination"
+    sample_count === undefined ||
+      (limit === undefined && offset === undefined && filters === undefined),
+    "sampling cannot be combined with filters or pagination",
   );
   if (columns !== undefined) {
     if (typeof columns === "string") {

@@ -1,4 +1,10 @@
-import { ContentType, DuneError, RequestPayload, payloadJSON, payloadSearchParams } from "../types";
+import {
+  ContentType,
+  DuneError,
+  RequestPayload,
+  payloadJSON,
+  payloadSearchParams,
+} from "../types";
 import { version } from "../../package.json";
 import log from "loglevel";
 import { logPrefix } from "../utils";
@@ -35,9 +41,15 @@ export class Router {
   async post<T>(
     route: string,
     params?: RequestPayload,
-    content_type: ContentType = ContentType.Json
+    content_type: ContentType = ContentType.Json,
   ): Promise<T> {
-    return this._request<T>(RequestMethod.POST, this.url(route), params, false, content_type);
+    return this._request<T>(
+      RequestMethod.POST,
+      this.url(route),
+      params,
+      false,
+      content_type,
+    );
   }
 
   protected async _handleResponse<T>(responsePromise: Promise<Response>): Promise<T> {
@@ -50,7 +62,11 @@ export class Router {
 
       return (await response.json()) as T;
     } catch (error) {
-      log.error(logPrefix, "Request failed", error instanceof Error ? error.name : "Unknown error");
+      log.error(
+        logPrefix,
+        "Request failed",
+        error instanceof Error ? error.name : "Unknown error",
+      );
       throw new DuneError(`Response ${error}`);
     }
   }
@@ -60,7 +76,7 @@ export class Router {
     url: string,
     payload?: RequestPayload,
     raw: boolean = false,
-    content_type: ContentType = ContentType.Json
+    content_type: ContentType = ContentType.Json,
   ): Promise<T> {
     let body: string | Buffer | undefined;
     if (Buffer.isBuffer(payload)) {
@@ -94,7 +110,11 @@ export class Router {
     return this._handleResponse<T>(response);
   }
 
-  protected async _get<T>(route: string, params?: RequestPayload, raw: boolean = false): Promise<T> {
+  protected async _get<T>(
+    route: string,
+    params?: RequestPayload,
+    raw: boolean = false,
+  ): Promise<T> {
     return this._request<T>(RequestMethod.GET, this.url(route), params, raw);
   }
 
@@ -105,7 +125,7 @@ export class Router {
   protected async _getByUrl<T>(
     url: string,
     params?: RequestPayload,
-    raw: boolean = false
+    raw: boolean = false,
   ): Promise<T> {
     return this._request<T>(RequestMethod.GET, url, params, raw);
   }
